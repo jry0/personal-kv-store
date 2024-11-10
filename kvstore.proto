@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package kvstore;
+option go_package = "github.com/jry0/personal-kv-store/kvstore;kvstore";
+import "google/protobuf/empty.proto";
+
+message SetRequest {
+  string key = 1;
+  bytes value = 2;
+}
+
+message GetRequest {
+  string key = 1;
+}
+
+message GetResponse {
+  bytes value = 1;
+}
+
+message DelRequest {
+  string key = 1;
+}
+
+message DelResponse {
+  bool success = 1;
+}
+
+message KeysRequest {}
+
+message KeysResponse {
+  repeated string keys = 1;
+}
+
+enum StorageMode {
+  SNAPSHOT = 0;
+  AOF = 1;
+  HYBRID = 2;
+}
+
+message ConfigRequest {
+  StorageMode storage_mode = 1;
+  int32 snapshot_interval = 2; // in seconds
+  int32 max_snapshots = 3;     // Number of snapshots to retain
+  int64 aof_max_size = 4;      // Max size of each AOF file in bytes
+}
+
+message ConfigResponse {
+  bool success = 1;
+}
+
+service KeyValueStore {
+  rpc Set(SetRequest) returns (google.protobuf.Empty);
+  rpc Get(GetRequest) returns (GetResponse);
+  rpc Del(DelRequest) returns (DelResponse);
+  rpc Keys(KeysRequest) returns (KeysResponse);
+  rpc Config(ConfigRequest) returns (ConfigResponse);
+}
