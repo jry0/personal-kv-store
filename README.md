@@ -50,11 +50,7 @@ The project includes:
 - `kvstore.proto`: Protobuf definitions of the gRPC service.
 - `server.go`: Implementation of the gRPC server.
 - `client_example.go`: Interactive client to interact with the server.
-- `Dockerfile.server`: Dockerfile to containerize the server.
-- `Dockerfile.client`: Dockerfile to containerize the client.
 - `kvstore/`: Contains the generated Go code from the `.proto` file.
-- `go.mod` and `go.sum`: Go module files.
-- `README.md`: This file.
 
 ## Building the Server and Client Separately
 
@@ -94,18 +90,6 @@ The project includes:
   ```bash
   docker run -d --name kvstore_server --network kvstore_net -p 50051:50051 kvstore_server:latest
   ```
-  Explanation:
-
-  `-d`: Runs the container in detached mode (in the background).
-  
-  `--name kvstore_server`: Names the container kvstore_server for easier reference.
-  
-  `--network kvstore_net`: Connects the container to the kvstore_net network.
-  
-  `-p 50051:50051`: Maps port 50051 of the host to port 50051 of the container.
-  
-  `kvstore_server:latest`: Specifies the image to run.
-    
   **Note**: The server will automatically create necessary directories (snapshots and aof) inside the container as needed.
 
 ## Running the Client Container
@@ -148,7 +132,7 @@ Available commands: set, get, del, keys, config, exit
 set <key> <value>
 ```
 
-Example:
+_Example:_
 ```bash
 > set username johndoe
 Set operation successful
@@ -159,7 +143,7 @@ Set operation successful
 get <key>
 ```
 
-Example:
+_Example:_
 
 ```bash
 > get username
@@ -171,7 +155,7 @@ Value: johndoe
 ```bash
 del <key>
 ```
-Example:
+_Example:_
 
 ```bash
 > del username
@@ -183,7 +167,7 @@ Delete operation successful
 ```
 keys
 ```
-Example:
+_Example:_
 
 ```bash
 > keys
@@ -216,7 +200,7 @@ config NON_PERSISTENT
 ```bash
 config SNAPSHOT <snapshot_interval> <max_snapshots>
 ```
-Example:
+_Example:_
 
 ```bash
 > config SNAPSHOT 300 5
@@ -229,7 +213,7 @@ Config operation successful
 ```bash
 config AOF <aof_max_size>
 ```
-Example:
+_Example:_
 
 ```bash
 > config AOF 10485760
@@ -241,34 +225,88 @@ Config operation successful
 ```bash
 config HYBRID <snapshot_interval> <max_snapshots> <aof_max_size>
 ```
-Example:
+_Example:_
 
 ```bash
 > config HYBRID 300 5 10485760
 Config operation successful
 ```
-#### Parameter Definitions:
+#### Config Parameter Definitions:
 
-`<storage_mode>:` NON_PERSISTENT, SNAPSHOT, AOF, or HYBRID.
+**Parameter Details**:
 
-`<snapshot_interval>`: Interval in seconds between snapshots (e.g., 300 for 5 minutes).
+- `<storage_mode>`: Defines how data persistence is handled.
 
-`<max_snapshots>`: Maximum number of snapshots to retain (e.g., 5).
+  - `NON_PERSISTENT`: Operates entirely in memory without saving data to disk.
 
-`<aof_max_size>`: Maximum size of AOF files in bytes (e.g., 10485760 for 10 MB).
+  - `SNAPSHOT`: Periodically saves data to snapshot files.
 
+  - `AOF`: Logs all write operations to an Append-Only File for recovery.
+
+  - `HYBRID`: Combines both Snapshot and AOF methods for robust persistence.
+
+- `<snapshot_interval>`: (Applicable for `SNAPSHOT` and `HYBRID` modes)
+
+  - **Type**: Integer
+  - **Description**: Interval in seconds between automatic snapshots.
+  - **Example**: 300 (for 5 minutes)
+- `<max_snapshots>`: (Applicable for `SNAPSHOT` and `HYBRID` modes)
+
+  - **Type**: Integer
+  - **Description**: Maximum number of snapshot files to retain.
+  - **Example**: 5
+
+- `<aof_max_size>`: (Applicable for `AOF` and `HYBRID` modes)
+
+  - **Type**: Integer
+  - **Description**: Maximum size of each AOF file in bytes.
+  - **Example**: 10485760 (for 10 MB)
+
+
+**Note**: When configuring the server, ensure that you provide the correct number of parameters based on the selected storage mode. The client will prompt and validate the parameters accordingly.
 ### Exit the Client
 
 ```bash
 exit
 ```
-Example:
+_Example:_
 
 ```bash
 > exit
 Exiting client.
 ```
 
+### Writing Your Own Client
+To create your own client in Go or another language, follow these steps:
+
+1. Define the Protobuf Messages and Service
+
+2. Use the kvstore.proto file as a reference for the gRPC service definitions and message formats.
+
+3. Generate Client Code
+
+    *Use the appropriate Protobuf plugin for your language to generate the client code.*
+
+    **For Go**:
+
+    ```bash
+    protoc \
+      --go_out=./kvstore \
+      --go-grpc_out=./kvstore \
+      --go_opt=paths=source_relative \
+      --go-grpc_opt=paths=source_relative \
+      kvstore.proto
+    ```
+4. Establish a Connection to the Server
+
+    *Connect to the server at kvstore_server:50051 (when using Docker network) or localhost:50051 (if running client locally).*
+
+    *See [`client_example.go`](https://github.com/jry0/personal-kv-store/blob/main/client_example.go) as reference*
+
+5. Use the client stub to call the Set, Get, Del, Keys, and Config methods.
+
+    *See [`client_example.go`](https://github.com/jry0/personal-kv-store/blob/main/client_example.go) as reference*
+    
 
 ### Style ##
 - Following https://google.github.io/styleguide/go/ for Go files.
