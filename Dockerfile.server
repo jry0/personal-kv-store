@@ -1,5 +1,5 @@
 # Stage 1: Build the server binary
-FROM golang:1.20 AS builder
+FROM golang:1.23 AS builder
 
 WORKDIR /app
 
@@ -27,7 +27,8 @@ RUN protoc \
   --go-grpc_opt=paths=source_relative \
   kvstore.proto
 
-# Build the server binary
+# Disable CGO and build a statically linked binary
+ENV CGO_ENABLED=0
 RUN go build -o kvstore_server server.go
 
 # Stage 2: Create the server container
@@ -40,6 +41,9 @@ WORKDIR /root/
 
 # Copy the server binary from the builder stage
 COPY --from=builder /app/kvstore_server .
+
+# Ensure the binary has execute permissions
+RUN chmod +x ./kvstore_server
 
 # Expose port 50051
 EXPOSE 50051

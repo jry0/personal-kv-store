@@ -38,7 +38,6 @@ The project includes:
   - [Running the Server Container](#running-the-server-container)
   - [Running the Client Container](#running-the-client-container)
 - [Using the Interactive Client](#using-the-interactive-client)
-- [Configuring the Server from the Client](#configuring-the-server-from-the-client)
 - [Writing Your Own Client](#writing-your-own-client)
 - [License](#license)
 - [Style](#style)
@@ -101,13 +100,6 @@ The project includes:
 ```bash
 docker run -it --rm --name kvstore_client --network kvstore_net kvstore_client:latest
 ```
-Explanation:
-
-`-it`: Runs the container in interactive mode with a TTY.
-`--rm`: Automatically removes the container when it exits.
-`--name kvstore_client`: Names the container kvstore_client.
-`--network kvstore_net`: Connects the container to the kvstore_net network.
-`kvstore_client:latest`: Specifies the image to run.
 
 ### Alternative Option (Using Host Networking on Linux):
 

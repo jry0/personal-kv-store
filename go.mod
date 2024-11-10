@@ -1,6 +1,6 @@
 module github.com/jry0/personal-kv-store
 
-go 1.23.2
+go 1.23
 
 require (
 	golang.org/x/net v0.29.0 // indirect

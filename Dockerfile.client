@@ -1,5 +1,5 @@
 # Stage 1: Build the client binary
-FROM golang:1.20 AS builder
+FROM golang:1.23 AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,8 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Build the client binary
+# Disable CGO and build a statically linked binary
+ENV CGO_ENABLED=0
 RUN go build -o kvstore_client client_example.go
 
 # Stage 2: Create the client container
@@ -25,6 +26,9 @@ WORKDIR /root/
 
 # Copy the client binary from the builder stage
 COPY --from=builder /app/kvstore_client .
+
+# Ensure the binary has execute permissions
+RUN chmod +x ./kvstore_client
 
 # Command to run the client
 CMD ["./kvstore_client"]
