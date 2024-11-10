@@ -307,7 +307,10 @@ To create your own client in Go or another language, follow these steps:
 
     *See [`client_example.go`](https://github.com/jry0/personal-kv-store/blob/main/client_example.go) as reference*
     
+**For Other Languages:**
 
+Generate client code using the respective Protobuf plugin (e.g., grpc_tools_node_protoc for Node.js, grpcio-tools for Python).
+Follow the language-specific conventions for creating stubs and making RPC calls.
 ### Style ##
 - Following https://google.github.io/styleguide/go/ for Go files.
 - Following https://protobuf.dev/programming-guides/style/ for proto files.
