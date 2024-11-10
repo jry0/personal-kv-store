@@ -14,11 +14,10 @@ The server provides a gRPC interface for clients to interact with the key-value 
 The project includes:
 
 - A gRPC server (`server.go`).
+- Support for `string:bytes` data storage.
 - An interactive client (`client_example.go`) that allows you to interact with the server using commands.
 - Separate Dockerfiles for server and client.
 - Instructions on how to build, run, and test the server and client using Docker.
-- Steps to configure the server from the interactive client.
-- Support for `string:bytes` data storage.
 
 ### Future Development ###
 - Support for more data structures
