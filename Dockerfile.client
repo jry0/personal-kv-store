@@ -1,0 +1,30 @@
+# Stage 1: Build the client binary
+FROM golang:1.20 AS builder
+
+WORKDIR /app
+
+# Copy go.mod and go.sum
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the source code
+COPY . .
+
+# Build the client binary
+RUN go build -o kvstore_client client_example.go
+
+# Stage 2: Create the client container
+FROM alpine:latest
+
+# Install CA certificates
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /root/
+
+# Copy the client binary from the builder stage
+COPY --from=builder /app/kvstore_client .
+
+# Command to run the client
+CMD ["./kvstore_client"]

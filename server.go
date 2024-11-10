@@ -18,16 +18,17 @@ import (
 
 	pb "github.com/jry0/personal-kv-store/kvstore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-// StorageMode represents the storage mode of the server.
 type StorageMode int
 
 const (
 	SnapshotMode StorageMode = iota
 	AOFMode
 	HybridMode
+	NonPersistentMode
 )
 
 const (
@@ -64,7 +65,6 @@ func NewServer() *Server {
 	}
 }
 
-// Set sets the value for a given key.
 func (s *Server) Set(ctx context.Context, req *pb.SetRequest) (*emptypb.Empty, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -80,7 +80,6 @@ func (s *Server) Set(ctx context.Context, req *pb.SetRequest) (*emptypb.Empty, e
 	return &emptypb.Empty{}, nil
 }
 
-// Get retrieves the value for a given key.
 func (s *Server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -92,7 +91,6 @@ func (s *Server) Get(ctx context.Context, req *pb.GetRequest) (*pb.GetResponse, 
 	return &pb.GetResponse{Value: value}, nil
 }
 
-// Del deletes a key-value pair.
 func (s *Server) Del(ctx context.Context, req *pb.DelRequest) (*pb.DelResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -109,7 +107,7 @@ func (s *Server) Del(ctx context.Context, req *pb.DelRequest) (*pb.DelResponse, 
 	return &pb.DelResponse{Success: exists}, nil
 }
 
-// Keys returns all the keys in the store.
+// Keys returns all the keys in the store. Inspired by Redis keys command.
 func (s *Server) Keys(ctx context.Context, req *pb.KeysRequest) (*pb.KeysResponse, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -121,12 +119,26 @@ func (s *Server) Keys(ctx context.Context, req *pb.KeysRequest) (*pb.KeysRespons
 	return &pb.KeysResponse{Keys: keys}, nil
 }
 
-// Config updates the server's configuration.
+// Update server config
 func (s *Server) Config(ctx context.Context, req *pb.ConfigRequest) (*pb.ConfigResponse, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.storageMode = StorageMode(req.StorageMode)
+
+	if s.storageMode == NonPersistentMode {
+		// Stop snapshotting and AOF if NonPersistentMode is selected
+		if s.snapshotTicker != nil {
+			s.snapshotTicker.Stop()
+			s.snapshotTicker = nil
+		}
+		if s.aofFile != nil {
+			s.aofFile.Close()
+			s.aofFile = nil
+		}
+		log.Println("Switched to NonPersistentMode: Data will not be persisted.")
+		return &pb.ConfigResponse{Success: true}, nil
+	}
 
 	// Handle snapshot configurations
 	if s.storageMode == SnapshotMode || s.storageMode == HybridMode {
@@ -321,6 +333,11 @@ func (s *Server) cleanupOldSnapshots() {
 func (s *Server) loadSnapshot() {
 	entries, err := os.ReadDir("snapshots")
 	if err != nil {
+
+		// Snapshots directory does not exist; this is expected on first run
+		if os.IsNotExist(err) {
+			return
+		}
 		log.Printf("Error reading snapshots directory: %v", err)
 		return
 	}
@@ -370,6 +387,10 @@ func (s *Server) loadSnapshot() {
 func (s *Server) replayAOF() {
 	entries, err := os.ReadDir("aof")
 	if err != nil {
+		// AOF directory does not exist; this is expected on first run
+		if os.IsNotExist(err) {
+			return
+		}
 		log.Printf("Error reading AOF directory: %v", err)
 		return
 	}
@@ -437,6 +458,12 @@ func (s *Server) replayAOFFile(filePath string) {
 }
 
 func (s *Server) loadData() {
+
+	if s.storageMode == NonPersistentMode {
+		log.Println("NonPersistentMode selected: Skipping data loading.")
+		return
+	}
+
 	s.loadSnapshot()
 	if s.storageMode == AOFMode || s.storageMode == HybridMode {
 		s.replayAOF()
@@ -469,6 +496,7 @@ func main() {
 	kvServer.loadData()
 
 	pb.RegisterKeyValueStoreServer(grpcServer, kvServer)
+	reflection.Register(grpcServer)
 
 	// Handle graceful shutdown
 	go func() {
