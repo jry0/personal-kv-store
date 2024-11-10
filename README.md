@@ -18,8 +18,10 @@ The project includes:
 - Separate Dockerfiles for server and client.
 - Instructions on how to build, run, and test the server and client using Docker.
 - Steps to configure the server from the interactive client.
+- Support for `string:bytes` data storage.
 
 ### Future Development ###
+- Support for more data structures
 - Implement distributed architecture with:
   - consistent hashing
   - virtual node replication
