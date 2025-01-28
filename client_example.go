@@ -16,26 +16,31 @@ import (
 )
 
 func main() {
-	// Set up a connection to the server.
-	conn, err := grpc.Dial("kvstore_server:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	conn, err := grpc.NewClient("kvstore_server:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
+
 	defer conn.Close()
 	client := pb.NewKeyValueStoreClient(conn)
 
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("Interactive Key-Value Store Client")
 	fmt.Println("Available commands: set, get, del, keys, config, exit")
+
 	for {
 		fmt.Print("> ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
+
 		if input == "" {
 			continue
 		}
+
 		parts := strings.Fields(input)
 		cmd := strings.ToLower(parts[0])
+
 		switch cmd {
 		case "set":
 			if len(parts) < 3 {

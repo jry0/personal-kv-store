@@ -1,3 +1,6 @@
+//go:build server
+// +build server
+
 package main
 
 import (
@@ -32,9 +35,11 @@ const (
 )
 
 const (
-	defaultSnapshotInterval = 300              // 5 minutes
-	defaultMaxSnapshots     = 5                // Retain 5 snapshots
-	defaultAOFMaxSize       = 10 * 1024 * 1024 // 10 MB
+	defaultSnapshotInterval = 300               // 5 minutes
+	defaultMaxSnapshots     = 5                 // Retain 5 snapshots
+	defaultAOFMaxSize       = 10 * 1024 * 1024  // 10 MB
+	aofDir                  = "/data/aof"       // Changed from "aof"
+	snapshotDir             = "/data/snapshots" // Changed from "snapshots"
 )
 
 // Server represents the key-value store server.
@@ -230,9 +235,9 @@ func (s *Server) checkAOFSize() {
 func (s *Server) createNewAOFFile() error {
 	timestamp := time.Now().Format("20060102T150405")
 	filename := fmt.Sprintf("appendonly-%s.aof", timestamp)
-	filePath := filepath.Join("aof", filename)
+	filePath := filepath.Join(aofDir, filename) // Changed from "aof"
 
-	if err := os.MkdirAll("aof", 0755); err != nil {
+	if err := os.MkdirAll(aofDir, 0755); err != nil { // Changed from "aof"
 		return fmt.Errorf("error creating AOF directory: %w", err)
 	}
 
@@ -265,9 +270,9 @@ func (s *Server) takeSnapshot() error {
 
 	timestamp := time.Now().Format("20060102T150405")
 	filename := fmt.Sprintf("snapshot-%s.rdb", timestamp)
-	filePath := filepath.Join("snapshots", filename)
+	filePath := filepath.Join(snapshotDir, filename) // Changed from "snapshots"
 
-	if err := os.MkdirAll("snapshots", 0755); err != nil {
+	if err := os.MkdirAll(snapshotDir, 0755); err != nil { // Changed from "snapshots"
 		return fmt.Errorf("error creating snapshots directory: %w", err)
 	}
 
@@ -288,7 +293,7 @@ func (s *Server) takeSnapshot() error {
 }
 
 func (s *Server) cleanupOldSnapshots() {
-	entries, err := os.ReadDir("snapshots")
+	entries, err := os.ReadDir(snapshotDir) // Changed from "snapshots"
 	if err != nil {
 		log.Printf("Error reading snapshots directory: %v", err)
 		return
@@ -321,7 +326,7 @@ func (s *Server) cleanupOldSnapshots() {
 	// Delete the oldest snapshots
 	numToRemove := len(fileInfos) - s.maxSnapshots
 	for i := 0; i < numToRemove; i++ {
-		filePath := filepath.Join("snapshots", fileInfos[i].Name())
+		filePath := filepath.Join(snapshotDir, fileInfos[i].Name()) // Changed from "snapshots"
 		if err := os.Remove(filePath); err != nil {
 			log.Printf("Error deleting old snapshot %s: %v", fileInfos[i].Name(), err)
 		} else {
@@ -331,7 +336,7 @@ func (s *Server) cleanupOldSnapshots() {
 }
 
 func (s *Server) loadSnapshot() {
-	entries, err := os.ReadDir("snapshots")
+	entries, err := os.ReadDir(snapshotDir) // Changed from "snapshots"
 	if err != nil {
 
 		// Snapshots directory does not exist; this is expected on first run
@@ -368,7 +373,7 @@ func (s *Server) loadSnapshot() {
 	})
 	latestSnapshot := fileInfos[0]
 
-	filePath := filepath.Join("snapshots", latestSnapshot.Name())
+	filePath := filepath.Join(snapshotDir, latestSnapshot.Name()) // Changed from "snapshots"
 	file, err := os.Open(filePath)
 	if err != nil {
 		log.Printf("Error opening snapshot file: %v", err)
@@ -385,7 +390,7 @@ func (s *Server) loadSnapshot() {
 }
 
 func (s *Server) replayAOF() {
-	entries, err := os.ReadDir("aof")
+	entries, err := os.ReadDir(aofDir) // Changed from "aof"
 	if err != nil {
 		// AOF directory does not exist; this is expected on first run
 		if os.IsNotExist(err) {
@@ -415,7 +420,7 @@ func (s *Server) replayAOF() {
 	})
 
 	for _, fileInfo := range fileInfos {
-		filePath := filepath.Join("aof", fileInfo.Name())
+		filePath := filepath.Join(aofDir, fileInfo.Name()) // Changed from "aof"
 		s.replayAOFFile(filePath)
 	}
 }

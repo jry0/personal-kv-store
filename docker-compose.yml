@@ -1,0 +1,33 @@
+services:
+  kvserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    image: personal-kv-store-server:latest
+    container_name: kvstore_server
+    ports:
+      - "50051:50051"
+    # environment:
+    networks:
+      - kvnet
+    volumes:
+      - server-data:/data
+
+  kvstore_client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    image: personal-kv-store-client:latest
+    container_name: kvstore_client
+    depends_on:
+      - kvserver
+    networks:
+      - kvnet
+    stdin_open: true
+
+networks:
+  kvnet:
+    driver: bridge
+
+volumes:
+  server-data:

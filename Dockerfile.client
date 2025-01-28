@@ -12,9 +12,9 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Disable CGO and build a statically linked binary
+# Disable CGO and build a statically linked binary with the 'client' tag
 ENV CGO_ENABLED=0
-RUN go build -o kvstore_client client_example.go
+RUN go build -tags=client -o kvstore_client client_example.go
 
 # Stage 2: Create the client container
 FROM alpine:latest
