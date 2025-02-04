@@ -1,3 +1,6 @@
+//go:build client
+// +build client
+
 package main
 
 import (
@@ -17,7 +20,7 @@ import (
 
 func main() {
 
-	conn, err := grpc.NewClient("kvstore_server:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial("kvstore_server:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
@@ -125,7 +128,6 @@ func main() {
 			var maxSnapshots int32
 			var aofMaxSize int64
 
-			// Determine required parameters based on storage mode
 			if storageMode == pb.StorageMode_SNAPSHOT || storageMode == pb.StorageMode_HYBRID {
 				if len(parts) < 4 {
 					fmt.Println("Usage for SNAPSHOT or HYBRID mode: config <storage_mode> <snapshot_interval> <max_snapshots> [aof_max_size]")
@@ -168,7 +170,6 @@ func main() {
 				aofMaxSize = aof
 			}
 
-			// Construct the ConfigRequest based on storage mode
 			configReq := &pb.ConfigRequest{
 				StorageMode: storageMode,
 			}

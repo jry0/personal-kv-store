@@ -7,11 +7,15 @@ services:
     container_name: kvstore_server
     ports:
       - "50051:50051"
-    # environment:
     networks:
       - kvnet
     volumes:
-      - server-data:/data
+      - kvstore_data:/data
+    healthcheck:
+      test: ["CMD", "grpc_health_probe", "-addr=:50051"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   kvstore_client:
     build:
@@ -30,4 +34,4 @@ networks:
     driver: bridge
 
 volumes:
-  server-data:
+  kvstore_data:

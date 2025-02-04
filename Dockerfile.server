@@ -1,25 +1,17 @@
-# Stage 1: Build the server binary
 FROM golang:1.23 AS builder
 
 WORKDIR /app
 
-# Copy go.mod and go.sum
 COPY go.mod go.sum ./
-
-# Download dependencies
 RUN go mod download
 
-# Copy the source code
 COPY . .
 
-# Install protoc and plugins
 RUN apt-get update && apt-get install -y protobuf-compiler
 
-# Install protoc-gen-go and protoc-gen-go-grpc
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest \
     && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 
-# Generate Go code from .proto file
 RUN protoc \
   --go_out=. \
   --go-grpc_out=. \
@@ -27,26 +19,23 @@ RUN protoc \
   --go-grpc_opt=paths=source_relative \
   kvstore.proto
 
-# Disable CGO and build a statically linked binary
 ENV CGO_ENABLED=0
-RUN go build -o kvstore_server server.go
+RUN go build -tags=server -o kvstore_server server.go
 
-# Stage 2: Create the server container
+# Install grpc_health_probe
+RUN go install github.com/grpc-ecosystem/grpc-health-probe@latest
+
 FROM alpine:latest
 
-# Install CA certificates
 RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-# Copy the server binary from the builder stage
 COPY --from=builder /app/kvstore_server .
+COPY --from=builder /go/bin/grpc-health-probe /usr/local/bin/grpc_health_probe
 
-# Ensure the binary has execute permissions
-RUN chmod +x ./kvstore_server
+RUN chmod +x ./kvstore_server /usr/local/bin/grpc_health_probe
 
-# Expose port 50051
 EXPOSE 50051
 
-# Command to run the server
 CMD ["./kvstore_server"]

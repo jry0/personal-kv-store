@@ -21,6 +21,8 @@ import (
 
 	pb "github.com/jry0/personal-kv-store/kvstore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -502,6 +504,11 @@ func main() {
 
 	pb.RegisterKeyValueStoreServer(grpcServer, kvServer)
 	reflection.Register(grpcServer)
+
+	// Register healthcheck service
+	healthServer := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(grpcServer, healthServer)
+	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
 
 	// Handle graceful shutdown
 	go func() {
