@@ -1,14 +1,13 @@
 services:
-  kvserver:
+  kvstore_server:
     build:
       context: .
       dockerfile: Dockerfile.server
     image: personal-kv-store-server:latest
-    container_name: kvstore_server
     ports:
       - "50051:50051"
     networks:
-      - kvnet
+      - kvstore_net
     volumes:
       - kvstore_data:/data
     healthcheck:
@@ -22,22 +21,28 @@ services:
       context: .
       dockerfile: Dockerfile.client
     image: personal-kv-store-client:latest
-    container_name: kvstore_client
     depends_on:
-      - kvserver
+      - kvstore_server
     networks:
-      - kvnet
+      - kvstore_net
     stdin_open: true
 
   test:
     build:
       context: .
-      dockerfile: tests/Dockerfile.test
+      dockerfile: ./tests/Dockerfile.test
+    image: personal-kv-store-test:latest
+    container_name: kvstore_test
     depends_on:
-      - kvserver
+      - kvstore_server
+    networks:
+      - kvstore_net
+    environment:
+      - KVSTORE_SERVER_ADDR=kvstore_server:50051
+    command: ["go", "test", "./tests"]
 
 networks:
-  kvnet:
+  kvstore_net:
     driver: bridge
 
 volumes:

@@ -1,9 +1,5 @@
-FROM golang:1.23
-
+FROM golang:1.23 AS builder
 WORKDIR /app
-
-COPY go.mod go.sum ./
-RUN go mod download
-
 COPY . .
-CMD ["go", "test", "-v", "-run", "TestClientIntegration", "./..."]
+RUN go mod download
+CMD ["go", "test", "-v", "./tests"]

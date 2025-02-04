@@ -19,15 +19,15 @@ func TestMain(m *testing.M) {
 	if serverAddr == "" {
 		serverAddr = "localhost:50051"
 	}
+
 	conn, err := grpc.Dial(serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
-	defer conn.Close()
 	client = pb.NewKeyValueStoreClient(conn)
-	m.Run()
+	exitCode := m.Run()
+	os.Exit(exitCode)
 }
-
 func TestClient_SetAndGet(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
