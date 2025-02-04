@@ -29,6 +29,13 @@ services:
       - kvnet
     stdin_open: true
 
+  test:
+    build:
+      context: .
+      dockerfile: tests/Dockerfile.test
+    depends_on:
+      - kvserver
+
 networks:
   kvnet:
     driver: bridge
