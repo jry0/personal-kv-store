@@ -65,6 +65,8 @@ The project includes:
 ├── go.sum
 └── README.md
 ```
+- `/tests`: Contains Dockerfile.test and related files to run integration tests for the client.
+- `/cmd`, `/pkg`, etc.: Other project directories.
 
 ## Docker Compose Deployment
 
