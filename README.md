@@ -12,11 +12,10 @@ This project implements a personal key-value store using Go and gRPC. It support
 The server provides a gRPC interface for clients to interact with the key-value store.
 
 The project includes:
-
-- A gRPC server (`server/server.go`).
-- Support for `string:bytes` data storage.
-- An interactive client (`client/client_example.go`) that allows you to interact with the server using commands.
-- Separate Dockerfiles for server and client.
+- A gRPC server (`server.go`).
+- An interactive client (`client_example.go`) that allows you to interact with the server using commands.
+- Separate Dockerfiles for the server, client, and tests.
+- Docker Compose deployment for building and running all services.
 - Instructions on how to build, run, and test the server and client using Docker Compose.
 
 ### Future Development ###
@@ -49,24 +48,21 @@ The project includes:
 ## Project Structure
 ```plaintext
 .
-├── client/
-│   ├── client_example.go
-│   └── Dockerfile.client
-├── server/
-│   ├── server.go
-│   └── Dockerfile.server
-├── tests/
-│   ├── server_test.go
+├── client_example.go
+├── Dockerfile.client
+├── server.go
+├── Dockerfile.server
+├── tests
 │   ├── client_test.go
-│   ├── Dockerfile.test
-│   └── run_tests.sh
+│   ├── server_test.go
+│   └── Dockerfile.test
 ├── docker-compose.yml
 ├── go.mod
 ├── go.sum
 └── README.md
 ```
-- `/tests`: Contains Dockerfile.test and related files to run integration tests for the client.
-- `/cmd`, `/pkg`, etc.: Other project directories.
+- The **tests** folder now contains integration tests using a Dockerfile (Dockerfile.test).
+- Docker Compose uses a dedicated network (`kvstore_net`) and volume (`kvstore_data`).
 
 ## Docker Compose Deployment
 
@@ -81,20 +77,18 @@ The project includes:
 
 2. **Start the Services with Docker Compose**
 
-    Use Docker Compose to build the images and start the containers.
+    Use Docker Compose to build images and start containers:
 
     ```bash
     docker-compose up --build -d
     ```
 
-    - `--build`: Rebuilds the images if there are any changes.
-    - `-d`: Runs the containers in detached mode.
+    - `--build`: Rebuilds images for any changes.
+    - `-d`: Runs containers in detached mode.
 
 ### Verifying the Deployment
 
 1. **Check Running Containers**
-
-    Ensure that both the server and client containers are running.
 
     ```bash
     docker-compose ps
@@ -102,15 +96,13 @@ The project includes:
 
 2. **View Server Logs**
 
-    Inspect the server logs to ensure it's running correctly.
-
     ```bash
     docker-compose logs kvstore_server
     ```
 
 3. **Access the Interactive Client**
 
-    Attach to the client container to interact with the key-value store.
+    Attach to the client container:
 
     ```bash
     docker exec -it kvstore_client ./kvstore_client
@@ -118,7 +110,7 @@ The project includes:
 
 ### Stopping the Services
 
-To stop and remove the containers, networks, and volumes created by Docker Compose, run:
+Stop and remove containers, networks, and volumes:
 
 ```bash
 docker-compose down
@@ -156,11 +148,16 @@ Integration tests verify the interaction between the server and client within a 
 **Run Integration Tests**
 
 1. **Ensure Docker Compose is Up**
+Integration tests verify the interaction between the server and client within a Docker environment.
+
+**Run Integration Tests**
+
+1. **Ensure Docker Compose is Up**
 
    Start the necessary services:
 
    ```bash
-   docker-compose up -d kvserver
+   docker-compose up -d kvstore_server
    ```
 
 2. **Run Tests**
@@ -168,7 +165,7 @@ Integration tests verify the interaction between the server and client within a 
    Execute the test container which runs the integration tests:
 
    ```bash
-   docker-compose run --rm test
+   docker-compose run --rm kvstore_test
    ```
 
 3. **Stop Services**
@@ -192,9 +189,9 @@ bash tests/run_tests.sh
 This script performs the following actions:
 
 1. Runs unit tests.
-2. Starts the `kvserver` container.
+2. Starts the `kvstore_server` container.
 3. Waits for the server to initialize.
-4. Runs integration tests using the `test` service.
+4. Runs integration tests using the `kvstore_test` service.
 5. Stops and removes all containers.
 
 ---
@@ -264,9 +261,9 @@ To automate testing on every push and pull request, set up GitHub Actions as fol
        - name: Build and Test Docker Images
          run: |
            docker-compose build
-           docker-compose up -d kvserver
+           docker-compose up -d kvstore_server
            sleep 5
-           docker-compose run --rm test
+           docker-compose run --rm kvstore_test
            docker-compose down
    ```
    </file>
