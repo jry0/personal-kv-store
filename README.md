@@ -148,11 +148,6 @@ Integration tests verify the interaction between the server and client within a 
 **Run Integration Tests**
 
 1. **Ensure Docker Compose is Up**
-Integration tests verify the interaction between the server and client within a Docker environment.
-
-**Run Integration Tests**
-
-1. **Ensure Docker Compose is Up**
 
    Start the necessary services:
 
@@ -176,115 +171,8 @@ Integration tests verify the interaction between the server and client within a 
    docker-compose down
    ```
 
-### Automated Test Script
-
-For convenience, you can use the provided `tests/run_tests.sh` script to execute all tests sequentially.
-
-**Run All Tests**
-
-```bash
-bash tests/run_tests.sh
-```
-
-This script performs the following actions:
-
-1. Runs unit tests.
-2. Starts the `kvstore_server` container.
-3. Waits for the server to initialize.
-4. Runs integration tests using the `kvstore_test` service.
-5. Stops and removes all containers.
-
----
-
 ## Continuous Integration
-
-To automate testing on every push and pull request, set up GitHub Actions as follows:
-
-1. **Create GitHub Actions Workflow Directory**
-
-   ```bash
-   mkdir -p .github/workflows
-   ```
-
-2. **Add Workflow File**
-
-   Create a file `.github/workflows/ci.yml` with the following content:
-
-   <file>
-   ```yaml
-   // filepath: /Users/jxing/side-projects/personal-kv-store/.github/workflows/ci.yml
-   name: CI
-
-   on:
-     push:
-       branches: [ main ]
-     pull_request:
-       branches: [ main ]
-
-   jobs:
-     build:
-
-       runs-on: ubuntu-latest
-
-       steps:
-       - name: Checkout repository
-         uses: actions/checkout@v3
-
-       - name: Set up Go
-         uses: actions/setup-go@v4
-         with:
-           go-version: 1.23
-
-       - name: Install Protobuf Compiler
-         run: sudo apt-get install -y protobuf-compiler
-
-       - name: Install Protoc Plugins
-         run: |
-           go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-           go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-           export PATH=$PATH:$(go env GOPATH)/bin
-
-       - name: Generate Protobuf Code
-         run: |
-           protoc \
-             --go_out=./server \
-             --go-grpc_out=./server \
-             --go_opt=paths=source_relative \
-             --go-grpc_opt=paths=source_relative \
-             kvstore.proto
-
-       - name: Run Unit Tests
-         run: |
-           cd tests
-           go test -v ./...
-
-       - name: Build and Test Docker Images
-         run: |
-           docker-compose build
-           docker-compose up -d kvstore_server
-           sleep 5
-           docker-compose run --rm kvstore_test
-           docker-compose down
-   ```
-   </file>
-
-3. **Commit and Push**
-
-   ```bash
-   git add .github/workflows/ci.yml
-   git commit -m "Add GitHub Actions CI workflow"
-   git push origin main
-   ```
-
-This workflow will:
-
-- **Trigger** on pushes and pull requests to the `main` branch.
-- **Set up Go** and install necessary dependencies.
-- **Generate Protobuf code**.
-- **Run unit tests** located in the `tests/` directory.
-- **Build Docker images** and run integration tests using Docker Compose.
-
----
+GitHub Actions has been set up to piggyback integration tests off of Docker-- essentially calling the above steps.
 
 ## Using the Interactive Client
 Once the client container is running, you'll see the interactive prompt:
